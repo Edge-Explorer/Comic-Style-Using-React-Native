@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { SafeAreaView, View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { SafeAreaView, View, Text, Image, StyleSheet, TouchableOpacity, Modal, Animated } from 'react-native';
 
 const DragonBallComic = () => {
   const fullDescription =
@@ -11,6 +11,60 @@ const DragonBallComic = () => {
   const [description, setDescription] = useState(shortDescription);
   const [showFull, setShowFull] = useState(false);
   const [showPopup, setShowPopup] = useState(true);
+  const [showPowerModal, setShowPowerModal] = useState(false);
+  const [showNimbusModal, setShowNimbusModal] = useState(false);
+  
+  // Animation values for Nimbus
+  const nimbusPosition = useRef(new Animated.Value(0)).current;
+  const nimbusScale = useRef(new Animated.Value(1)).current;
+
+  // Animation for Nimbus cloud
+  useEffect(() => {
+    if (showNimbusModal) {
+      // Reset animation values when modal opens
+      nimbusPosition.setValue(0);
+      nimbusScale.setValue(1);
+      
+      // Create animations
+      const floatAnimation = Animated.sequence([
+        // Move up
+        Animated.timing(nimbusPosition, {
+          toValue: -15,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        // Move down
+        Animated.timing(nimbusPosition, {
+          toValue: 0,
+          duration: 1000,
+          useNativeDriver: true,
+        })
+      ]);
+      
+      const pulseAnimation = Animated.sequence([
+        // Grow slightly
+        Animated.timing(nimbusScale, {
+          toValue: 1.05,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        // Shrink back
+        Animated.timing(nimbusScale, {
+          toValue: 0.95,
+          duration: 1000,
+          useNativeDriver: true,
+        })
+      ]);
+      
+      // Combine and loop animations
+      Animated.loop(
+        Animated.parallel([
+          floatAnimation,
+          pulseAnimation
+        ])
+      ).start();
+    }
+  }, [showNimbusModal]);
 
   const toggleDescription = () => {
     if (showFull) {
@@ -23,6 +77,14 @@ const DragonBallComic = () => {
 
   const closePopup = () => {
     setShowPopup(false);
+  };
+
+  const togglePowerModal = () => {
+    setShowPowerModal(!showPowerModal);
+  };
+
+  const toggleNimbusModal = () => {
+    setShowNimbusModal(!showNimbusModal);
   };
 
   return (
@@ -46,7 +108,7 @@ const DragonBallComic = () => {
 
       {/* Comic Book Title Banner */}
       <View style={styles.titleBanner}>
-        <Text style={styles.comicTitle}>DRAGON BALL Z</Text>
+        <Text style={styles.comicTitle}>DRAGON BALL Z🐉</Text>
         <Text style={styles.issueNumber}>SPECIAL EDITION</Text>
       </View>
       
@@ -60,10 +122,10 @@ const DragonBallComic = () => {
           resizeMode="cover"
         />
         
-        {/* Speech Bubble */}
-        <View style={styles.speechBubble}>
+        {/* Speech Bubble as a Button */}
+        <TouchableOpacity style={styles.speechBubble} onPress={togglePowerModal}>
           <Text style={styles.speechText}>UNLEASH YOUR POWER!</Text>
-        </View>
+        </TouchableOpacity>
         
         {/* Action Words */}
         <View style={styles.actionWordContainer}>
@@ -86,10 +148,91 @@ const DragonBallComic = () => {
         </TouchableOpacity>
       </View>
       
-      {/* Bottom Panel */}
-      <View style={styles.bottomPanel}>
+      {/* Bottom Panel - Now as a TouchableOpacity */}
+      <TouchableOpacity style={styles.bottomPanel} onPress={toggleNimbusModal}>
         <Text style={styles.continueText}>TO BE CONTINUED...</Text>
-      </View>
+      </TouchableOpacity>
+
+      {/* Power Image Modal - Updated to be smaller and comic-styled */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={showPowerModal}
+        onRequestClose={togglePowerModal}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.comicModalContainer}>
+            <View style={styles.comicModalHeader}>
+              <Text style={styles.comicModalTitle}>POWER UNLEASHED!</Text>
+              <TouchableOpacity style={styles.comicCloseButton} onPress={togglePowerModal}>
+                <Text style={styles.comicCloseText}>X</Text>
+              </TouchableOpacity>
+            </View>
+            <Image
+              source={{
+                uri: 'https://c4.wallpaperflare.com/wallpaper/424/108/950/ultra-instinct-goku-dragon-ball-super-4k-wallpaper-preview.jpg'
+              }}
+              style={styles.comicModalImage}
+              resizeMode="cover"
+            />
+            <View style={styles.comicModalCaption}>
+              <Text style={styles.comicModalCaptionText}>Goku Ultra Instinct!</Text>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Nimbus Cloud Modal - With Animation */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={showNimbusModal}
+        onRequestClose={toggleNimbusModal}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.comicModalContainer}>
+            <View style={styles.comicModalHeader}>
+              <Text style={styles.comicModalTitle}>COMING SOON!</Text>
+              <TouchableOpacity style={styles.comicCloseButton} onPress={toggleNimbusModal}>
+                <Text style={styles.comicCloseText}>X</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.nimbusImageContainer}>
+              <Animated.Image
+                source={{
+                  uri: 'http://vignette3.wikia.nocookie.net/princekodi/images/b/b4/Flying-Nimbus-psd61177.png/revision/latest?cb=20140915025054'
+                }}
+                style={[
+                  styles.comicModalImage,
+                  {
+                    transform: [
+                      { translateY: nimbusPosition },
+                      { scale: nimbusScale }
+                    ]
+                  }
+                ]}
+                resizeMode="contain"
+              />
+              {/* Animated shadow for the cloud */}
+              <Animated.View 
+                style={[
+                  styles.cloudShadow,
+                  {
+                    transform: [
+                      { scale: Animated.subtract(1.2, Animated.multiply(nimbusPosition, -0.01)) }
+                    ],
+                    opacity: Animated.subtract(0.7, Animated.multiply(nimbusPosition, -0.02))
+                  }
+                ]}
+              />
+            </View>
+            <View style={styles.comicModalCaption}>
+              <Text style={styles.comicModalCaptionText}>Nimbus Cloud Adventure!</Text>
+              <Text style={styles.comicModalSubCaption}>Watch it float through the skies!</Text>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -114,7 +257,7 @@ const styles = StyleSheet.create({
   },
   titleBanner: {
     backgroundColor: '#FF5722',
-    padding: 10,
+    padding: 5,
     alignItems: 'center',
     borderWidth: 4,
     borderColor: '#000',
@@ -162,6 +305,12 @@ const styles = StyleSheet.create({
     borderColor: '#000',
     maxWidth: '60%',
     transform: [{ rotate: '5deg' }],
+    // Add button styling
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 2, height: 2 },
+    shadowOpacity: 0.4,
+    shadowRadius: 2,
   },
   speechText: {
     fontWeight: 'bold',
@@ -228,6 +377,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 14,
   },
+  // Bottom panel now has button styling
   bottomPanel: {
     backgroundColor: '#FF5722',
     padding: 10,
@@ -235,6 +385,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 3,
     borderColor: '#000',
+    // Add button styling
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 2, height: 2 },
+    shadowOpacity: 0.4,
+    shadowRadius: 2,
   },
   continueText: {
     fontWeight: 'bold',
@@ -294,4 +450,98 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 14,
   },
+  // Modal overlay
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  
+  // Comic-Styled Modal
+  comicModalContainer: {
+    width: '70%',
+    backgroundColor: '#FFF8E1',
+    borderWidth: 5,
+    borderColor: '#000',
+    borderRadius: 5,
+    overflow: 'hidden',
+    elevation: 10,
+    transform: [{ rotate: '-1deg' }],
+  },
+  comicModalHeader: {
+    backgroundColor: '#FF5722',
+    padding: 8,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderBottomWidth: 3,
+    borderBottomColor: '#000',
+  },
+  comicModalTitle: {
+    color: '#FFEB3B',
+    fontWeight: '900',
+    fontSize: 18,
+    textShadowColor: '#000',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 1,
+    textTransform: 'uppercase',
+  },
+  comicCloseButton: {
+    backgroundColor: '#FFEB3B',
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#000',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  comicCloseText: {
+    color: '#FF5722',
+    fontWeight: 'bold',
+    fontSize: 12,
+  },
+  comicModalImage: {
+    width: '100%',
+    height: 180,
+  },
+  comicModalCaption: {
+    backgroundColor: '#FFF176',
+    padding: 8,
+    borderTopWidth: 3,
+    borderTopColor: '#000',
+  },
+  comicModalCaptionText: {
+    textAlign: 'center',
+    fontWeight: 'bold',
+    fontSize: 16,
+    color: '#D32F2F',
+    fontFamily: 'Courier',
+  },
+  comicModalSubCaption: {
+    textAlign: 'center',
+    fontSize: 12,
+    color: '#D32F2F',
+    fontFamily: 'Courier',
+    marginTop: 2,
+  },
+  // Nimbus animation specific styles
+  nimbusImageContainer: {
+    height: 180,
+    backgroundColor: '#83D3F3', // Sky blue background
+    overflow: 'hidden',
+    position: 'relative',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cloudShadow: {
+    position: 'absolute',
+    bottom: 20,
+    width: 100,
+    height: 20,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    borderRadius: 50,
+    zIndex: -1,
+  }
 });
